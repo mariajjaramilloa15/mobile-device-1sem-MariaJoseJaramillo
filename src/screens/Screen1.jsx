@@ -42,10 +42,10 @@ export const Screen1 = () => {
             await client.patch(`/users/edit/${id}`, editForm); // Updated to PATCH and correct route
             setIsEditing(null);
             fetchUsers();
-            Alert.alert("User updated successfully");
+            Alert.alert("Usuario actualizado");
         } catch (error) {
             console.error(error);
-            Alert.alert("Failed to update user");
+            Alert.alert("Error al actualizar");
         }
     };
 
@@ -53,10 +53,10 @@ export const Screen1 = () => {
         try {
             await client.delete(`/users/remove/${id}`); // Updated to correct route
             setUsers(users.filter(user => user.id !== id));
-            Alert.alert("User deleted successfully");
+            Alert.alert("Usuario eliminado");
         } catch (error) {
             console.error(error);
-            Alert.alert("Failed to delete user");
+            Alert.alert("Error al eliminar");
         }
     };
 
