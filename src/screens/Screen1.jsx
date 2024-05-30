@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Text, ScrollView, View, StyleSheet, Image, TouchableOpacity, Alert, TextInput, Button } from "react-native";
+import { Text, ScrollView, View, StyleSheet, Image, TouchableOpacity, Modal, TextInput, Button, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import client from "../../api/client";
 import { Ionicons } from "@expo/vector-icons";
-import { Feather } from '@expo/vector-icons';
-import { MaterialIcons } from '@expo/vector-icons';
 
 export const Screen1 = () => {
     const navigation = useNavigation();
     const [users, setUsers] = useState([]);
     const [isEditing, setIsEditing] = useState(null); // Track if a user is being edited
     const [editForm, setEditForm] = useState({ fullname: '', email: '', password: '', role: '' });
+    const [modalVisible, setModalVisible] = useState(false); // State to control modal visibility
+    const [modalMessage, setModalMessage] = useState(''); // State to control modal message
     const AVATAR_FALLBACK_URL = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-SnDtnoTbs_JJtNW62ALeA4gKPtpCGcQ5CnVEJNNAddxjuLwrbo1c16rExrxYL4xLmIw";
 
     const fetchUsers = async () => {
@@ -42,22 +42,48 @@ export const Screen1 = () => {
             await client.patch(`/users/edit/${id}`, editForm); // Updated to PATCH and correct route
             setIsEditing(null);
             fetchUsers();
-            Alert.alert("Usuario actualizado");
+            setModalMessage("Usuario actualizado correctamente");
+            setModalVisible(true);
         } catch (error) {
             console.error(error);
-            Alert.alert("Error al actualizar");
+            Alert.alert("Error al actualizar usuario");
         }
     };
 
     const deleteUser = async (id) => {
-        try {
+        /*try {
             await client.delete(`/users/remove/${id}`); // Updated to correct route
             setUsers(users.filter(user => user.id !== id));
-            Alert.alert("Usuario eliminado");
+            Alert.alert("Usuario eliminado correctamente");
         } catch (error) {
             console.error(error);
-            Alert.alert("Error al eliminar");
-        }
+            Alert.alert("Error al eliminar usuario");
+        }*/
+        Alert.alert(
+            'Eliminar usuario',
+            '¿Estás seguro de eliminar este usuario?',
+            [
+                {
+                    text: 'Cancelar',
+                    onPress: () => console.log('Cancel Pressed'),
+                    style: 'cancel',
+                },
+                {
+                    text: 'Eliminar',
+                    onPress: async () => {
+                        try {
+                            await client.delete(`/users/remove/${id}`); // Updated to correct route
+                            setUsers(users.filter(user => user.id !== id));
+                            Alert.alert("Usuario eliminado correctamente");
+                        } catch (error) {
+                            console.error(error);
+                            Alert.alert("Error al eliminar usuario");
+                        }
+                    },
+                },
+            ],
+            { cancelable: false }
+        )
     };
 
     return (
@@ -67,12 +93,10 @@ export const Screen1 = () => {
                     {users.map((user) => (
                         <View key={user.id} style={styles.userItem}>
                             {user.avatar && (
-                               <Image
-                               source={{uri: user.avatar ? `http://192.168.116.32:3001/uploads/users/${user.avatar}` : AVATAR_FALLBACK_URL}}
-
-                               style={{ width: 50, height: 50, borderRadius: 25 }}
-                           />
-
+                                <Image
+                                    source={{ uri: user.avatar ? `http://192.168.1.10:3001/uploads/users/${user.avatar}` : AVATAR_FALLBACK_URL }}
+                                    style={{ width: 50, height: 50, borderRadius: 25 }}
+                                />
                             )}
                             {isEditing === user.id ? (
                                 <View style={styles.userContent}>
@@ -100,15 +124,14 @@ export const Screen1 = () => {
                                         value={editForm.role}
                                         onChangeText={(value) => setEditForm({ ...editForm, role: value })}
                                     />
-                                    <Button title="Guardar" onPress={() => handleEdit(user.id)} />
+                                    <Button title="Actualizar" onPress={() => handleEdit(user.id)} />
                                     <Button title="Cancelar" onPress={cancelEditing} />
                                 </View>
                             ) : (
                                 <View style={styles.userContent}>
-                                    <Text style={styles.userName}>{user.fullname}</Text>
-                                    <Text style={styles.userEmail}>{user.email}</Text>
-                                    <Text style={styles.userRole}>{user.role}</Text>
-
+                                    <Text>{user.fullname}</Text>
+                                    <Text>{user.email}</Text>
+                                    <Text>{user.role}</Text>
                                 </View>
                             )}
                             <View style={styles.buttonsContainer}>
@@ -122,6 +145,19 @@ export const Screen1 = () => {
                         </View>
                     ))}
                 </View>
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={modalVisible}
+                    onRequestClose={() => setModalVisible(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContainer}>
+                            <Text>{modalMessage}</Text>
+                            <Button title="Cerrar" onPress={() => setModalVisible(false)} />
+                        </View>
+                    </View>
+                </Modal>
             </View>
         </ScrollView>
     );
@@ -164,5 +200,18 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         padding: 10,
         width: '100%',
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContainer: {
+        width: 300,
+        padding: 20,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        alignItems: 'center',
     },
 });
